@@ -1,0 +1,32 @@
+{
+  "admin": {
+    "password": "admin123",
+    "role": "admin",
+    "email": "admin@kubeauth.com"
+  },
+  "devuser": {
+    "password": "dev123",
+    "role": "developer",
+    "email": "dev@kubeauth.com"
+  },
+  "viewer": {
+    "password": "view123",
+    "role": "viewer",
+    "email": "viewer@kubeauth.com"
+  },
+  "omkar": {
+    "password": "omi",
+    "role": "admin",
+    "email": "omkar@kubeauth.com"
+  },
+  "dypiu": {
+    "password": "123",
+    "role": "admin",
+    "email": "dypiu@kubeauth.com"
+  },
+  "abhi": {
+    "password": "123",
+    "role": "viewer",
+    "email": "abhi@kubeauth.com"
+  }
+}

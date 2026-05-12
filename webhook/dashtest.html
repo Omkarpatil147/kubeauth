@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KubeAuth Enterprise Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;}
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:#0f172a;display:flex;flex-direction:column;z-index:100;}
+.sb-logo{padding:18px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:10px;}
+.sb-icon{width:34px;height:34px;background:#3B82F6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-name{font-size:15px;font-weight:700;color:#f1f5f9;}
+.sb-ver{font-size:11px;color:#64748b;}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto;}
+.sb-sec{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#475569;padding:14px 10px 4px;font-weight:700;}
+.sbi{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:#94a3b8;font-size:13px;margin-bottom:2px;transition:all 0.15s;user-select:none;}
+.sbi:hover{background:#1e293b;color:#e2e8f0;}
+.sbi.active{background:#1d4ed8;color:white;}
+.sbi svg{width:15px;height:15px;flex-shrink:0;}
+.sb-foot{padding:10px 8px;border-top:1px solid #1e293b;}
+.sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;color:#94a3b8;font-size:12px;margin-bottom:4px;}
+.sb-av{width:28px;height:28px;background:#1d4ed8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
+.main{margin-left:220px;padding:22px 24px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.pt{font-size:18px;font-weight:700;color:#0f172a;}
+.ps{font-size:13px;color:#64748b;margin-top:2px;}
+.live-badge{display:flex;align-items:center;gap:6px;background:white;border:1px solid #e2e8f0;border-radius:20px;padding:5px 14px;font-size:12px;color:#475569;}
+.ld{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.page{display:none;}.page.active{display:block;}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px;}
+.stat-card{background:white;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;}
+.stat-label{font-size:11px;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;}
+.stat-val{font-size:28px;font-weight:700;}
+.stat-sub{font-size:11px;color:#94a3b8;margin-top:3px;}
+.c-blue{color:#2563eb;}.c-green{color:#16a34a;}.c-red{color:#dc2626;}.c-amber{color:#d97706;}
+.panel{background:white;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;}
+.ph{padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}
+.pht{font-size:13px;font-weight:700;color:#0f172a;}
+.phs{font-size:12px;color:#64748b;}
+.lh{display:grid;grid-template-columns:80px 100px 85px 75px 105px 1fr;gap:6px;padding:7px 16px;background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;}
+.lr{display:grid;grid-template-columns:80px 100px 85px 75px 105px 1fr;gap:6px;padding:9px 16px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center;}
+.lr:last-child{border-bottom:none;}
+.lr:hover{background:#f8fafc;}
+.lr.new-row{animation:fi 0.3s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-granted{background:#dcfce7;color:#166534;}
+.b-denied{background:#fee2e2;color:#991b1b;}
+.b-admin{background:#ede9fe;color:#5b21b6;}
+.b-developer{background:#dbeafe;color:#1e40af;}
+.b-viewer{background:#fef3c7;color:#92400e;}
+.b-none{background:#f1f5f9;color:#64748b;}
+.mono{font-family:monospace;font-size:10px;color:#94a3b8;}
+.av{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.av-g{background:#dcfce7;color:#166534;}
+.av-d{background:#fee2e2;color:#991b1b;}
+.ucell{display:flex;align-items:center;gap:7px;}
+.empty-msg{padding:28px;text-align:center;color:#94a3b8;font-size:13px;}
+.btn{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:6px 13px;font-size:12px;cursor:pointer;color:#1e293b;transition:all 0.15s;}
+.btn:hover{background:#f8fafc;border-color:#cbd5e1;}
+.btn:active{transform:scale(0.98);}
+.btn-p{background:#2563eb;color:white;border-color:#2563eb;}
+.btn-p:hover{background:#1d4ed8;}
+.btn-d{background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.btn-s{background:#dcfce7;color:#166534;border-color:#bbf7d0;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-box{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:16px;}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:12px;color:#0f172a;}
+.uh{display:grid;grid-template-columns:130px 85px 150px 1fr 110px;gap:8px;padding:7px 16px;background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;}
+.ur{display:grid;grid-template-columns:130px 85px 150px 1fr 110px;gap:8px;padding:10px 16px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center;}
+.ur:last-child{border-bottom:none;}
+.ur:hover{background:#f8fafc;}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;padding:14px 16px;border-bottom:1px solid #f1f5f9;align-items:end;}
+.fl{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase;}
+.fi{width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;color:#1e293b;outline:none;background:white;}
+.fi:focus{border-color:#3B82F6;}
+.cr{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9;font-size:13px;}
+.cr:last-child{border-bottom:none;}
+.cp{color:#16a34a;font-size:16px;font-weight:700;}
+.cf{color:#dc2626;font-size:16px;font-weight:700;}
+.sg{display:grid;grid-template-columns:210px 1fr;gap:14px;margin-bottom:14px;}
+.score-card{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:22px;text-align:center;}
+.alert-bar{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:13px;color:#991b1b;}
+.flow-wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:16px;align-items:center;}
+.fbox{border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-size:12px;text-align:center;background:#f8fafc;line-height:1.5;}
+.farr{text-align:center;font-size:22px;color:#94a3b8;}
+.sim-area{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.filter-row{display:flex;gap:6px;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sb-name">KubeAuth</div>
+      <div class="sb-ver">Enterprise v2.0</div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-sec">Main</div>
+    <div class="sbi active" onclick="nav('overview',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Overview
+    </div>
+    <div class="sbi" onclick="nav('logs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Auth Logs
+    </div>
+    <div class="sbi" onclick="nav('analytics',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </div>
+    <div class="sb-sec">Access Control</div>
+    <div class="sbi" onclick="nav('users',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      User Management
+    </div>
+    <div class="sbi" onclick="nav('roles',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Roles &amp; Permissions
+    </div>
+    <div class="sb-sec">Security</div>
+    <div class="sbi" onclick="nav('security',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Threat Detection
+    </div>
+    <div class="sbi" onclick="nav('compliance',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Compliance
+    </div>
+    <div class="sbi" onclick="nav('flow',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+      Access Flow
+    </div>
+  </div>
+  <div class="sb-foot">
+    <div class="sb-user">
+      <div class="sb-av">AD</div>
+      <div>
+        <div style="color:#e2e8f0;font-size:12px;font-weight:600;">admin</div>
+        <div style="font-size:11px;color:#64748b;">Administrator</div>
+      </div>
+    </div>
+    <div class="sbi" onclick="window.location='/logout'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- OVERVIEW -->
+<div id="page-overview" class="page active">
+  <div class="topbar">
+    <div><div class="pt">Overview</div><div class="ps">Real-time access control monitoring</div></div>
+    <div class="live-badge"><div class="ld"></div>Live — auto-refresh every 3s</div>
+  </div>
+  <div id="threat-bar" style="display:none" class="alert-bar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span id="threat-msg">Security alert detected</span>
+  </div>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">Total requests</div><div class="stat-val c-blue" id="s-total">0</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card"><div class="stat-label">Access granted</div><div class="stat-val c-green" id="s-granted">0</div><div class="stat-sub" id="s-rate">0% success rate</div></div>
+    <div class="stat-card"><div class="stat-label">Access denied</div><div class="stat-val c-red" id="s-denied">0</div><div class="stat-sub">blocked requests</div></div>
+    <div class="stat-card"><div class="stat-label">Security score</div><div class="stat-val c-amber" id="s-score">—</div><div class="stat-sub">out of 100</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph">
+      <span class="pht">Recent auth events</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-s" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-d" onclick="clearAll()">Clear logs</button>
+      </div>
+    </div>
+    <div class="lh"><span>Time</span><span>User</span><span>Role</span><span>Status</span><span>Action</span><span>IP / Tx Hash</span></div>
+    <div id="recent-list"><div class="empty-msg">No events yet — use buttons below or send curl request</div></div>
+</div>
+</div>
+<!-- AUTH LOGS -->
+<div id="page-logs" class="page">
+  <div class="topbar">
+    <div><div class="pt">Auth Logs</div><div class="ps">Complete authentication history with blockchain hashes</div></div>
+    <div style="display:flex;gap:8px;">
+      <div class="filter-row">
+        <button class="btn btn-p" id="fl-all" onclick="setFilter('all')">All</button>
+        <button class="btn" id="fl-granted" onclick="setFilter('granted')">Granted</button>
+        <button class="btn" id="fl-denied" onclick="setFilter('denied')">Denied</button>
+      </div>
+      <button class="btn btn-s" onclick="exportCSV()">Export CSV</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="pht">Full auth log</span><span class="phs" id="log-count">0 events</span></div>
+    <div class="lh"><span>Time</span><span>User</span><span>Role</span><span>Status</span><span>Action</span><span>IP / Tx Hash</span></div>
+    <div id="full-log-list"><div class="empty-msg">No events yet</div></div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="page-analytics" class="page">
+  <div class="topbar"><div><div class="pt">Analytics</div><div class="ps">Access trends and user activity charts</div></div></div>
+  <div class="chart-grid">
+    <div class="chart-box"><div class="chart-title">Access requests by user</div><canvas id="chart-users"></canvas></div>
+    <div class="chart-box"><div class="chart-title">Granted vs Denied — last 7 days</div><canvas id="chart-trend"></canvas></div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-box"><div class="chart-title">Access status distribution</div><canvas id="chart-pie"></canvas></div>
+    <div class="chart-box"><div class="chart-title">Top actions attempted</div><canvas id="chart-actions"></canvas></div>
+  </div>
+</div>
+
+<!-- USERS -->
+<div id="page-users" class="page">
+  <div class="topbar"><div><div class="pt">User Management</div><div class="ps">Add, edit, remove users and assign roles</div></div></div>
+  <div class="panel">
+    <div class="ph"><span class="pht">Add new user</span></div>
+    <div class="form-row">
+      <div><label class="fl">Username</label><input class="fi" id="nu" placeholder="john" type="text"></div>
+      <div><label class="fl">Password</label><input class="fi" id="np" placeholder="pass123" type="text"></div>
+      <div><label class="fl">Role</label>
+        <select class="fi" id="nr">
+          <option value="admin">admin</option>
+          <option value="developer" selected>developer</option>
+          <option value="viewer">viewer</option>
+          <option value="none">none</option>
+        </select>
+      </div>
+      <button class="btn btn-p" onclick="addUser()" style="height:36px;margin-top:20px;">Add User</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="pht">All users</span><span class="phs" id="user-count">0 users</span></div>
+    <div class="uh"><span>Username</span><span>Role</span><span>Email</span><span>Permissions</span><span>Actions</span></div>
+    <div id="user-table"></div>
+  </div>
+</div>
+
+<!-- ROLES -->
+<div id="page-roles" class="page">
+  <div class="topbar"><div><div class="pt">Roles &amp; Permissions</div><div class="ps">Kubernetes RBAC role definitions</div></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="panel">
+      <div class="ph"><span class="pht"><span class="badge b-admin">admin</span> &nbsp;Full cluster access</span></div>
+      <div style="padding:0 16px;">
+        <div class="cr"><span>get pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>list pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>create deployment</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>delete pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>get secrets</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>manage RBAC</span><span class="cp">&#10003;</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pht"><span class="badge b-developer">developer</span> &nbsp;Pod read only</span></div>
+      <div style="padding:0 16px;">
+        <div class="cr"><span>get pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>list pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>create deployment</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>delete pods</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>get secrets</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>manage RBAC</span><span class="cf">&#10007;</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pht"><span class="badge b-viewer">viewer</span> &nbsp;Read only</span></div>
+      <div style="padding:0 16px;">
+        <div class="cr"><span>get pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>list pods</span><span class="cp">&#10003;</span></div>
+        <div class="cr"><span>create deployment</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>delete pods</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>get secrets</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>manage RBAC</span><span class="cf">&#10007;</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pht"><span class="badge b-none">no role</span> &nbsp;No access</span></div>
+      <div style="padding:0 16px;">
+        <div class="cr"><span>get pods</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>list pods</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>create deployment</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>delete pods</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>get secrets</span><span class="cf">&#10007;</span></div>
+        <div class="cr"><span>manage RBAC</span><span class="cf">&#10007;</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECURITY -->
+<div id="page-security" class="page">
+  <div class="topbar"><div><div class="pt">Threat Detection</div><div class="ps">Brute force detection and IP blocking</div></div></div>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">Blocked IPs</div><div class="stat-val c-red" id="sec-blocked">0</div><div class="stat-sub">brute force</div></div>
+    <div class="stat-card"><div class="stat-label">Security score</div><div class="stat-val c-amber" id="sec-score">—</div><div class="stat-sub">out of 100</div></div>
+    <div class="stat-card"><div class="stat-label">Total denied</div><div class="stat-val c-red" id="sec-denied">0</div><div class="stat-sub">blocked requests</div></div>
+    <div class="stat-card"><div class="stat-label">Detection</div><div class="stat-val c-green" style="font-size:16px;margin-top:6px;">Active</div><div class="stat-sub">monitoring on</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="pht">Blocked IP addresses</span><span class="phs">Auto-blocked after 5 failed attempts in 60s</span></div>
+    <div style="padding:14px 16px;"><div id="blocked-list" style="background:#fef2f2;border-radius:8px;padding:10px 14px;font-size:13px;color:#991b1b;min-height:44px;">No blocked IPs — system is clean</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="pht">Recent denied attempts</span></div>
+    <div class="lh"><span>Time</span><span>User</span><span>Role</span><span>Status</span><span>Action</span><span>IP</span></div>
+ 
+   
+    <div id="denied-list"><div class="empty-msg">No denied attempts</div></div>
+<button class="btn btn-s" onclick="unblockAll()">Unblock all IPs</button>
+  </div>
+</div>
+
+<!-- COMPLIANCE -->
+<div id="page-compliance" class="page">
+  <div class="topbar"><div><div class="pt">Compliance</div><div class="ps">Security score and SOC 2 compliance checklist</div></div></div>
+  <div class="sg">
+    <div class="score-card">
+      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">Security Score</div>
+      <div style="font-size:52px;font-weight:700;margin-bottom:6px;" id="comp-score">—</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:16px;">out of 100</div>
+      <div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;">
+        <div id="score-bar" style="height:100%;border-radius:4px;width:0%;transition:width 0.6s;background:#16a34a;"></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#94a3b8;" id="score-grade">Calculating...</div>
+    </div>
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph"><span class="pht">SOC 2 compliance checklist</span></div>
+      <div style="padding:0 16px;">
+        <div class="cr"><span>RBAC access control enabled</span><span id="c1" class="cp">—</span></div>
+        <div class="cr"><span>Blockchain audit logging active</span><span id="c2" class="cp">—</span></div>
+        <div class="cr"><span>Authentication webhook running</span><span id="c3" class="cp">—</span></div>
+        <div class="cr"><span>No users without role assigned</span><span id="c4">—</span></div>
+        <div class="cr"><span>No blocked IPs detected</span><span id="c5">—</span></div>
+        <div class="cr"><span>Dashboard login protected</span><span class="cp">&#10003;</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOW -->
+<div id="page-flow" class="page">
+  <div class="topbar"><div><div class="pt">Access Flow</div><div class="ps">How authentication and authorization work in KubeAuth</div></div></div>
+  <div class="panel">
+    <div class="ph"><span class="pht">Request lifecycle — from user command to blockchain log</span></div>
+    <div class="flow-wrap">
+      <div class="fbox" style="border-color:#2563eb;background:#dbeafe;color:#1e40af;">User sends<br>kubectl command</div>
+      <div class="farr">&#8594;</div>
+      <div class="fbox" style="border-color:#7c3aed;background:#ede9fe;color:#5b21b6;">Kubernetes API<br>server receives</div>
+      <div class="farr">&#8594;</div>
+      <div class="fbox" style="border-color:#059669;background:#dcfce7;color:#166534;">Webhook checks<br>user identity</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 16px 14px;">
+      <div class="fbox" style="border-color:#059669;background:#dcfce7;color:#166534;padding:16px;text-align:left;">
+        <div style="font-weight:700;margin-bottom:10px;font-size:14px;">If webhook says YES</div>
+        <div style="font-size:13px;line-height:1.8;">RBAC checks Role and RoleBinding<br>&#8594; Is this action in the role permissions?<br>&#8594; Yes = Access granted<br>&#8594; No = Access denied<br>&#8594; Event logged to blockchain</div>
+      </div>
+      <div class="fbox" style="border-color:#dc2626;background:#fee2e2;color:#991b1b;padding:16px;text-align:left;">
+        <div style="font-weight:700;margin-bottom:10px;font-size:14px;">If webhook says NO</div>
+        <div style="font-size:13px;line-height:1.8;">Request is blocked immediately<br>&#8594; RBAC check never happens<br>&#8594; Access denied returned<br>&#8594; Event logged to blockchain<br>&#8594; Slack alert sent</div>
+      </div>
+    </div>
+    <div class="flow-wrap" style="padding-top:0;">
+      <div class="fbox" style="border-color:#d97706;background:#fef3c7;color:#92400e;">Auth event<br>sent to blockchain</div>
+      <div class="farr">&#8594;</div>
+      <div class="fbox" style="border-color:#d97706;background:#fef3c7;color:#92400e;">Transaction hash<br>recorded</div>
+      <div class="farr">&#8594;</div>
+      <div class="fbox" style="border-color:#d97706;background:#fef3c7;color:#92400e;">Tamper-proof<br>audit log created</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script>
+let logs=[], logFilter='all';
+let chartU=null, chartT=null, chartP=null, chartA=null;
+
+function roleBadge(r){
+  const m={admin:'b-admin',developer:'b-developer',viewer:'b-viewer',none:'b-none'};
+  return `<span class="badge ${m[r]||'b-none'}">${r||'none'}</span>`;
+}
+function statusBadge(s){
+  return `<span class="badge ${s==='granted'?'b-granted':'b-denied'}">${s}</span>`;
+}
+function mkRow(l,i,isNew){
+  return `<div class="lr${isNew?' new-row':''}">
+    <span class="mono">${l.time}</span>
+    <div class="ucell"><div class="av ${l.status==='granted'?'av-g':'av-d'}">${(l.user||'??').slice(0,2).toUpperCase()}</div><span style="font-weight:700">${l.user}</span></div>
+    ${roleBadge(l.role)}
+    ${statusBadge(l.status)}
+    <span style="color:#475569;font-size:12px">${l.action}</span>
+    <div><div class="mono">${l.ip}</div><div class="mono">${l.tx}</div></div>
+  </div>`;
+}
+
+function nav(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sbi').forEach(s=>s.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  if(page==='analytics') loadAnalytics();
+  if(page==='users') loadUsers();
+  if(page==='security') loadSecurity();
+  if(page==='compliance') loadCompliance();
+}
+
+async function sa(user, action){
+  try{
+    await fetch('/authenticate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user,action})
+    });
+  }catch(e){}
+  await fetchLogs();
+}
+
+
+async function fetchLogs(){
+  try{
+    const r = await fetch('/logs');
+    const d = await r.json();
+    logs = d.logs || [];
+    renderOverview();
+    renderFullLog();
+    renderDeniedList();
+  }catch(e){}
+}
+
+function renderOverview(){
+  const g = logs.filter(l=>l.status==='granted').length;
+  const d = logs.filter(l=>l.status==='denied').length;
+  document.getElementById('s-total').textContent = logs.length;
+  document.getElementById('s-granted').textContent = g;
+  document.getElementById('s-denied').textContent = d;
+  const rate = logs.length ? Math.round(g/logs.length*100) : 0;
+  document.getElementById('s-rate').textContent = rate+'% success rate';
+  const el = document.getElementById('recent-list');
+  if(!logs.length){
+    el.innerHTML='<div class="empty-msg">No events yet — use buttons below or send curl request</div>';
+    return;
+  }
+  el.innerHTML = logs.slice(0,10).map((l,i)=>mkRow(l,i,i===0)).join('');
+}
+
+function renderFullLog(){
+  const vis = logFilter==='all' ? logs : logs.filter(l=>l.status===logFilter);
+  document.getElementById('log-count').textContent = vis.length+' events';
+  const el = document.getElementById('full-log-list');
+  if(!vis.length){ el.innerHTML='<div class="empty-msg">No events</div>'; return; }
+  el.innerHTML = vis.map((l,i)=>mkRow(l,i,false)).join('');
+}
+
+function renderDeniedList(){
+  const denied = logs.filter(l=>l.status==='denied');
+  document.getElementById('sec-denied').textContent = denied.length;
+  const el = document.getElementById('denied-list');
+  if(!denied.length){ el.innerHTML='<div class="empty-msg">No denied attempts</div>'; return; }
+  el.innerHTML = denied.slice(0,8).map((l,i)=>mkRow(l,i,false)).join('');
+}
+
+function setFilter(f){
+  logFilter = f;
+  ['all','granted','denied'].forEach(k=>{
+    const b = document.getElementById('fl-'+k);
+    if(b) b.className = 'btn '+(k===f?'btn-p':'');
+  });
+  renderFullLog();
+}
+
+async function clearAll(){
+  if(!confirm('Clear all logs?')) return;
+  await fetch('/clear',{method:'POST'});
+  await fetchLogs();
+}
+
+function exportCSV(){
+  if(!logs.length){ alert('No logs to export'); return; }
+  const hdr = 'Time,Date,User,Role,Action,Status,IP,TxHash\n';
+  const rows = logs.map(l=>
+    `${l.time},${l.date},${l.user},${l.role},${l.action},${l.status},${l.ip},${l.tx}`
+  ).join('\n');
+  const blob = new Blob([hdr+rows],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kubeauth-logs-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+async function loadAnalytics(){
+  try{
+    const r = await fetch('/analytics');
+    const d = await r.json();
+    document.getElementById('s-score').textContent = d.score;
+    const bu = d.by_user||{};
+    const ul = Object.keys(bu);
+    if(chartU){ chartU.destroy(); }
+    chartU = new Chart(document.getElementById('chart-users'),{
+      type:'bar',
+      data:{labels:ul,datasets:[
+        {label:'Granted',data:ul.map(u=>bu[u].granted),backgroundColor:'#86efac'},
+        {label:'Denied', data:ul.map(u=>bu[u].denied), backgroundColor:'#fca5a5'}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}
+    });
+    const tr = d.trend||[];
+    if(chartT){ chartT.destroy(); }
+    chartT = new Chart(document.getElementById('chart-trend'),{
+      type:'line',
+      data:{labels:tr.map(t=>t.date.slice(5)),datasets:[
+        {label:'Granted',data:tr.map(t=>t.granted),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.1)',fill:true,tension:0.3},
+        {label:'Denied', data:tr.map(t=>t.denied), borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.1)',fill:true,tension:0.3}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}
+    });
+    const total=logs.length, granted=logs.filter(l=>l.status==='granted').length;
+    if(chartP){ chartP.destroy(); }
+    chartP = new Chart(document.getElementById('chart-pie'),{
+      type:'doughnut',
+      data:{labels:['Granted','Denied'],datasets:[{data:[granted,total-granted],backgroundColor:['#86efac','#fca5a5'],borderWidth:0}]},
+      options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+    });
+    const ac={};
+    logs.forEach(l=>{ac[l.action]=(ac[l.action]||0)+1;});
+    const al=Object.keys(ac).sort((a,b)=>ac[b]-ac[a]).slice(0,6);
+    if(chartA){ chartA.destroy(); }
+    chartA = new Chart(document.getElementById('chart-actions'),{
+      type:'bar',
+      data:{labels:al,datasets:[{label:'Count',data:al.map(a=>ac[a]),backgroundColor:'#93c5fd'}]},
+      options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
+    });
+  }catch(e){}
+}
+
+async function loadUsers(){
+  try{
+    const r = await fetch('/users');
+    const users = await r.json();
+    const keys = Object.keys(users);
+    document.getElementById('user-count').textContent = keys.length+' users';
+    const PERMS = {
+      admin:'get pods, list pods, create, delete, secrets',
+      developer:'get pods, list pods',
+      viewer:'get pods, list pods',
+      none:'no permissions'
+    };
+    document.getElementById('user-table').innerHTML = keys.map(u=>`
+      <div class="ur">
+        <div class="ucell">
+          <div class="av ${users[u].role==='none'?'av-d':'av-g'}">${u.slice(0,2).toUpperCase()}</div>
+          <span style="font-weight:700">${u}</span>
+        </div>
+        <select onchange="changeRole('${u}',this.value)" class="fi" style="font-size:12px;padding:4px 8px;">
+          ${['admin','developer','viewer','none'].map(rx=>`<option ${users[u].role===rx?'selected':''}>${rx}</option>`).join('')}
+        </select>
+        <span style="font-size:11px;color:#64748b">${users[u].email||'—'}</span>
+        <span style="font-size:11px;color:#64748b">${PERMS[users[u].role]||'—'}</span>
+        <div style="display:flex;gap:6px;">
+          ${u!=='admin'?`<button class="btn btn-d" onclick="delUser('${u}')" style="padding:4px 10px;font-size:11px;">Remove</button>`:'<span style="font-size:11px;color:#94a3b8">protected</span>'}
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+async function changeRole(user, role){
+  await fetch('/users/update',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:user,role})
+  });
+}
+
+async function addUser(){
+  const u = document.getElementById('nu').value.trim();
+  const p = document.getElementById('np').value.trim();
+  const r = document.getElementById('nr').value;
+  if(!u){ alert('Enter a username'); return; }
+  const res = await fetch('/users/add',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:u,password:p||'pass123',role:r,email:u+'@kubeauth.com'})
+  });
+  const d = await res.json();
+  if(d.error){ alert(d.error); return; }
+  document.getElementById('nu').value='';
+  document.getElementById('np').value='';
+  loadUsers();
+}
+
+async function delUser(user){
+  if(!confirm(`Remove user "${user}"?`)) return;
+  await fetch('/users/delete',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:user})
+  });
+  loadUsers();
+}
+
+async function loadSecurity(){
+  try{
+    const r = await fetch('/security');
+    const d = await r.json();
+    document.getElementById('sec-blocked').textContent = d.blocked.length;
+    document.getElementById('sec-score').textContent = d.score;
+    const bl = document.getElementById('blocked-list');
+    if(d.blocked.length){
+      bl.innerHTML = d.blocked.length ? d.blocked.map(ip => `
+  <div style="display:flex;justify-content:space-between;align-items:center;
+              padding:8px 0;border-bottom:1px solid #fecaca;">
+    <div>
+      <span style="font-weight:600">${ip}</span>
+      <span style="font-size:11px;color:#991b1b;margin-left:8px;">
+        blocked — brute force detected
+      </span>
+    </div>
+    <button onclick="unblockIP('${ip}')"
+            style="background:#E1F5EE;color:#085041;border:1px solid #5DCAA5;
+                   border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;">
+      Unblock
+    </button>
+  </div>`).join('') : 'No blocked IPs — system is clean';
+      document.getElementById('threat-bar').style.display='flex';
+      document.getElementById('threat-msg').textContent=`Brute force detected from ${d.blocked.length} IP(s): ${d.blocked.join(', ')}`;
+    } else {
+      bl.innerHTML='No blocked IPs — system is clean';
+    }
+  }catch(e){}
+}
+async function unblockIP(ip) {
+    if (!confirm(`Unblock IP: ${ip}?\n\nOnly do this if this is a legitimate user.`))
+        return;
+    try {
+        const r = await fetch('/unblock', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ip})
+        });
+        const d = await r.json();
+        if (d.status === 'unblocked') {
+            alert(`IP ${ip} has been unblocked successfully.`);
+            loadSecurity();
+            fetchLogs();
+        } else {
+            alert('Error: ' + (d.error || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed to connect to server');
+    }
+}
+
+async function unblockAll() {
+    if (!confirm('Unblock ALL blocked IPs?\nOnly do this if you are sure.'))
+        return;
+    const r = await fetch('/unblock-all', {method:'POST'});
+    const d = await r.json();
+    alert(`Cleared ${d.count} blocked IP(s).`);
+    loadSecurity();
+    fetchLogs();
+}
+async function loadCompliance(){
+  try{
+    const r = await fetch('/analytics');
+    const d = await r.json();
+    const score = d.score;
+    document.getElementById('comp-score').textContent = score;
+    document.getElementById('score-bar').style.width = score+'%';
+    document.getElementById('score-bar').style.background = score>=80?'#16a34a':score>=50?'#d97706':'#dc2626';
+    document.getElementById('score-grade').textContent = score>=80?'Excellent — Production ready':score>=50?'Good — Minor improvements needed':'Needs attention';
+    const c = d.compliance;
+    function setC(id, val){
+      const el=document.getElementById(id);
+      el.textContent=val?'✓':'✗';
+      el.className=val?'cp':'cf';
+    }
+    setC('c1',c.rbac_enabled);
+    setC('c2',c.blockchain_logging);
+    setC('c3',c.webhook_running);
+    setC('c4',c.no_unknown_users);
+    setC('c5',c.no_blocked_ips);
+  }catch(e){}
+}
+
+fetchLogs();
+loadUsers();
+setInterval(fetchLogs, 3000);
+setInterval(()=>{ if(Math.random()>0.7) simRandom(); }, 6000);
+</script>
+</body>
+</html>

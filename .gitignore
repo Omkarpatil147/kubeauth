@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+ENV/
+env/
+
+# Environment and secrets
+.env
+.env.local
+.env.production
+*.secret
+secrets.json
+
+# AWS credentials — NEVER push these
+.aws/
+aws-credentials
+*.pem
+*.key
+key.pem
+kubeauth.pem
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Kubernetes
+*.kubeconfig
+/etc/rancher/
+/var/lib/rancher/
+
+# Database
+*.db
+*.sqlite3
+*.dump
+
+# Test and coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
