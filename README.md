@@ -62,6 +62,7 @@ must address for Kubernetes security:
 ---
 
 ## Project Structure
+```text
 kubeauth-project/
 ├── blockchain/
 │   ├── KubeAuth.sol           # Ethereum smart contract (Solidity)
@@ -80,6 +81,7 @@ kubeauth-project/
 ├── .gitignore
 ├── requirements.txt
 └── README.md
+```
 ---
 
 ## Prerequisites
