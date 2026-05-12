@@ -40,31 +40,8 @@ must address for Kubernetes security:
 
 ---
 
-## Architecture
-User (kubectl command)
-│
-▼
-K3s Kubernetes API Server (Port 6443)
-│
-▼
-Flask Webhook Server (Port 8080)
-├── Brute Force Check (blocked_ips set)
-├── User Lookup (users.json)
-└── RBAC Permission Check (DEFAULT_PERMS)
-│
-┌────┴────┐
-▼         ▼
-Granted    Denied
-│         │
-└────┬────┘
-│
-▼
-Ganache Blockchain (Port 8545)
-└── Ethereum Transaction Written
-└── TX Hash Generated (tamper-proof)
-│
-├──► Enterprise Dashboard (live updates)
-└──► AWS SNS Email Alert (if denied)
+## System Architecture
+![System Architecture](ARCH.png)
 ---
 
 ## Tech Stack
